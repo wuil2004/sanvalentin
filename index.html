@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bienvenida - Universo de Amor</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #000;
+            color: white;
+            font-family: 'Segoe UI', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: -1;
+        }
+
+        .welcome-card {
+            background: rgba(10, 10, 10, 0.85);
+            padding: 40px;
+            border-radius: 30px;
+            border: 2px solid #ff0055;
+            box-shadow: 0 0 50px rgba(255, 0, 85, 0.3);
+            text-align: center;
+            max-width: 550px;
+            width: 90%;
+            backdrop-filter: blur(15px);
+            animation: fadeIn 1.5s ease-out;
+            position: relative;
+            z-index: 10;
+        }
+
+        h1 {
+            color: #ff0055;
+            font-size: 2.8rem;
+            margin-bottom: 10px;
+            text-shadow: 0 0 15px rgba(255, 0, 85, 0.6);
+        }
+
+        p.intro {
+            font-size: 1.1rem;
+            color: #eee;
+            margin-bottom: 25px;
+        }
+
+        .instructions {
+            text-align: left;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 20px;
+            margin-bottom: 25px;
+            border: 1px solid rgba(255, 0, 85, 0.2);
+        }
+
+        .instruction-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .instruction-item span {
+            font-size: 1.8rem;
+            margin-right: 15px;
+            filter: drop-shadow(0 0 5px #ff0055);
+        }
+
+        .alert-box {
+            background: rgba(255, 200, 0, 0.1);
+            border-left: 4px solid #ffcc00;
+            padding: 10px 15px;
+            margin-bottom: 25px;
+            font-size: 0.9rem;
+            color: #ffcc00;
+            text-align: left;
+        }
+
+        .btn-start {
+            display: inline-block;
+            padding: 18px 50px;
+            background: linear-gradient(45deg, #ff0055, #ff4d88);
+            color: white;
+            text-decoration: none;
+            font-weight: bold;
+            border-radius: 50px;
+            font-size: 1.3rem;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 10px 20px rgba(255, 0, 85, 0.4);
+        }
+
+        .btn-start:hover {
+            transform: scale(1.1) translateY(-5px);
+            box-shadow: 0 0 30px #ff0055;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="bg-canvas"></canvas>
+
+    <div class="welcome-card">
+        <h1>¡Hola! ✨</h1>
+        <p class="intro">Estás por entrar a una experiencia de amor galáctica.</p>
+        
+        <div class="alert-box">
+            ⚠️ <b>Importante:</b> Usa una <b>Laptop</b>, asegúrate de estar en un <b>lugar iluminado</b> y <b>concede permiso a la cámara</b> para que detecte tu magia.
+        </div>
+
+        <div class="instructions">
+            <div class="instruction-item">
+                <span>👌</span>
+                <div><b>Gesto OK:</b> Corazón de Cristal Latiente.</div>
+            </div>
+            <div class="instruction-item">
+                <span>✌️</span>
+                <div><b>Gesto Paz:</b> Tu nombre entre pétalos.</div>
+            </div>
+            <div class="instruction-item">
+                <span>🤞</span>
+                <div><b>Corazón Coreano:</b> Una dedicatoria especial.</div>
+            </div>
+            <div class="instruction-item">
+                <span>👐</span>
+                <div><b>Dos Manos:</b> Flor de Loto Maestra.</div>
+            </div>
+        </div>
+
+        <a href="efectos.html" class="btn-start">INICIAR EXPERIENCIA</a>
+    </div>
+
+    <script>
+        // --- FONDO DE ESTRELLAS ANIMADAS ---
+        const canvas = document.getElementById('bg-canvas');
+        const renderer = new THREE.WebGLRenderer({canvas, antialias: true});
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 1000);
+        camera.position.z = 1;
+
+        const starGeo = new THREE.BufferGeometry();
+        const starCoords = [];
+        for (let i = 0; i < 6000; i++) {
+            starCoords.push(Math.random() * 600 - 300, Math.random() * 600 - 300, Math.random() * 600 - 300);
+        }
+        starGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(starCoords), 3));
+        const starMat = new THREE.PointsMaterial({color: 0xffffff, size: 0.7});
+        const starPoints = new THREE.Points(starGeo, starMat);
+        scene.add(starPoints);
+
+        function animate() {
+            starPoints.rotation.y += 0.001;
+            starPoints.rotation.x += 0.0005;
+            renderer.render(scene, camera);
+            requestAnimationFrame(animate);
+        }
+        animate();
+
+        window.addEventListener('resize', () => {
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+        });
+    </script>
+</body>
+</html>
