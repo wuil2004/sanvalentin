@@ -22,7 +22,7 @@
 
 <div id="ui-container">
     <h1>Efecto Infinito Dinámico</h1>
-    <p>Puño: Esfera | OK: Corazón | Paz: Nombre | Palma: Enjambre</p>
+    <p>Puño: Esfera | OK: Corazón | Paz: Nombre | Palma: Enjambre | <b>☝️: Mariposa</b></p>
     <p><small>(Acerca o aleja la mano para cambiar el tamaño)</small></p>
     <input type="text" id="targetName" placeholder="Escribe un nombre...">
     <br>
@@ -41,7 +41,7 @@ let petalParticles, petalGeometry;
 let pointsCount = 45000;
 let petalCount = 400;
 let starCount = 3500;
-let spherePos = [], heartPos = [], namePos = [], lotusPos = [], lotusColors = [], idlePos = [];
+let spherePos = [], heartPos = [], namePos = [], lotusPos = [], lotusColors = [], idlePos = [], butterflyBase = [];
 let currentTarget = "idle";
 let targetX = 0, targetY = 0, currentScale = 1, rotY = 0, rotX = 0, autoRot = 0, time = 0;
 let handVel = 0, lastHandX = 0, lastHandY = 0;
@@ -101,6 +101,8 @@ function initThree() {
             const a = Math.random() * Math.PI * 2, rr = Math.random() * 90;
             lotusPos.push(rr * Math.cos(a), Math.random() * 60, rr * Math.sin(a)); lotusColors.push(1, 0.8, 0); 
         }
+        
+        butterflyBase.push(Math.random(), Math.random(), Math.random());
     }
 
     geometry = new THREE.BufferGeometry();
@@ -113,7 +115,7 @@ function initThree() {
     let pPositions = [];
     for(let i=0; i<petalCount; i++) pPositions.push((Math.random()-0.5)*1500, 600 + Math.random()*1000, (Math.random()-0.5)*1000);
     petalGeometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(pPositions), 3));
-    petalParticles = new THREE.Points(petalGeometry, new THREE.PointsMaterial({ size: 7, color: 0xff0044, transparent: true, opacity: 0 }));
+    petalParticles = new THREE.Points(petalGeometry, new THREE.PointsMaterial({ size: 7, color: 0xffffff, transparent: true, opacity: 0 }));
     scene.add(petalParticles);
 
     renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -164,11 +166,17 @@ hands.onResults((results)=>{
         const peace = (lm[8].y < lm[6].y && lm[12].y < lm[10].y && lm[16].y > lm[14].y);
         const open = (lm[8].y < lm[6].y && lm[12].y < lm[10].y && lm[16].y < lm[14].y && lm[20].y < lm[18].y);
         const fist = (lm[8].y > lm[6].y && lm[12].y > lm[10].y && lm[16].y > lm[14].y && lm[20].y > lm[18].y);
+        
+        // GESTO: Indice arriba (☝️)
+        const pointing = (lm[8].y < lm[6].y && lm[12].y > lm[10].y && lm[16].y > lm[14].y && lm[20].y > lm[18].y);
 
-        // Medir tamaño de la palma para el escalado
         const handSize = Math.hypot(lm[5].x - lm[17].x, lm[5].y - lm[17].y);
 
-        if (fist) {
+        if (pointing) {
+            currentTarget = "butterfly";
+            currentScale = THREE.MathUtils.lerp(currentScale, handSize * 15, 0.1);
+        }
+        else if (fist) {
             currentTarget = "sphere";
             currentScale = THREE.MathUtils.lerp(currentScale, handSize * 15, 0.1); 
         }
@@ -190,8 +198,6 @@ function animate() {
     stars.material.opacity = 0.6 + Math.sin(time * 0.8) * 0.3;
 
     const pos = geometry.attributes.position.array, col = geometry.attributes.color.array;
-    
-    // Latido base para el corazón
     const heartBeat = Math.pow(Math.sin(time * 3), 4);
     
     let targetArr;
@@ -205,49 +211,47 @@ function animate() {
         const i3 = i*3;
         let tx, ty, tz, c;
 
-        if (currentTarget === "infinity") {
+        if (currentTarget === "butterfly") {
+            const t = (i / pointsCount) * Math.PI * 2;
+            const flap = Math.sin(time * (5 + handVel * 0.1));
+            if (i % 20 === 0) {
+                tx = 0; ty = (Math.random() - 0.5) * 100 * currentScale; tz = 0;
+                c = {r: 1, g: 1, b: 1};
+            } else {
+                const side = i % 2 === 0 ? 1 : -1;
+                const r = (Math.exp(Math.sin(t)) - 2 * Math.cos(4 * t) + Math.pow(Math.sin((2 * t - Math.PI) / 24), 5)) * 60 * currentScale;
+                tx = Math.sin(t) * r * side;
+                ty = Math.cos(t) * r;
+                tz = Math.abs(tx) * flap * 0.5;
+                c = side > 0 ? {r: 1, g: 1, b: 1} : {r: 1, g: 0.1, b: 0.1}; // Blanco y Rojo
+            }
+
+        } else if (currentTarget === "infinity") {
             const speed = (0.02 + (i % 20) * 0.002) * (1 + handVel * 0.1);
             const dist = (80 + (i % 300)) * (1 + handVel * 0.05);
             tx = Math.sin(time * speed + i) * dist;
             ty = Math.cos(time * speed * 0.8 + i) * dist;
             tz = Math.sin(time * speed * 1.2 + i) * dist;
-            const colorInterp = Math.min(1, handVel * 0.5);
-            c = { r: 0.1 + colorInterp * 0.8, g: 0.9 - colorInterp * 0.7, b: 1 };
+            c = { r: 0.1 + handVel*0.1, g: 0.9, b: 1 };
         } else if (currentTarget === "idle") {
-            tx = targetArr[i3] + Math.sin(time * 0.2 + i) * 10;
-            ty = targetArr[i3+1] + Math.cos(time * 0.2 + i) * 10;
-            tz = targetArr[i3+2];
+            tx = idlePos[i3] + Math.sin(time * 0.2 + i) * 10;
+            ty = idlePos[i3+1] + Math.cos(time * 0.2 + i) * 10;
+            tz = idlePos[i3+2];
             c = {r: 0.3, g: 0.3, b: 0.4};
         } else if (currentTarget === "sphere") {
-            const jitter = handVel * 2;
-            tx = targetArr[i3] * currentScale + (Math.random()-0.5) * jitter;
-            ty = targetArr[i3+1] * currentScale + (Math.random()-0.5) * jitter;
-            tz = targetArr[i3+2] * currentScale + (Math.random()-0.5) * jitter;
-            const flash = Math.min(1, handVel * 0.3);
-            c = {r: 0.2 + flash, g: 0.7 + flash, b: 1};
+            tx = spherePos[i3] * currentScale + (Math.random()-0.5) * handVel;
+            ty = spherePos[i3+1] * currentScale + (Math.random()-0.5) * handVel;
+            tz = spherePos[i3+2] * currentScale + (Math.random()-0.5) * handVel;
+            c = {r: 0.2, g: 0.7, b: 1};
         } else if (currentTarget === "heart") {
-            // El latido se vuelve más fuerte cuando el corazón es más grande
-            const beatIntensity = 0.1 + (currentScale * 0.05);
-            const dynamicScale = currentScale * (1 + heartBeat * beatIntensity);
-            tx = targetArr[i3] * dynamicScale;
-            ty = targetArr[i3+1] * dynamicScale;
-            tz = targetArr[i3+2] * dynamicScale;
-            
-            // Color rojo pulsa con el latido
-            const pulseColor = 0.6 + heartBeat * 0.4;
-            const flash = Math.min(0.2, handVel * 0.2);
-            c = {r: pulseColor + flash, g: 0.05 + flash, b: 0.1 + flash};
+            const ds = currentScale * (1 + heartBeat * 0.15);
+            tx = heartPos[i3] * ds; ty = heartPos[i3+1] * ds; tz = heartPos[i3+2] * ds;
+            c = {r: pulseColor = 0.6 + heartBeat * 0.4, g: 0.05, b: 0.1};
         } else {
-            tx = targetArr[i3]; 
-            ty = targetArr[i3+1]; 
-            tz = targetArr[i3+2];
+            tx = targetArr[i3]; ty = targetArr[i3+1]; tz = targetArr[i3+2];
             if (currentTarget==="lotus") {
-                particles.scale.set(currentScale, currentScale, currentScale);
                 c = i < 30000 ? {r:0.98, g:0.98, b:1} : (i < 40000 ? {r:0.05, g:0.5, b:0.15} : {r:1, g:0.8, b:0});
-            } else {
-                particles.scale.set(1, 1, 1);
-                c = currentTarget==="name"? {r:1,g:1,b:1} : {r:0.8, g:0.9, b:1};
-            }
+            } else c = {r:1, g:1, b:1};
         }
 
         pos[i3] += (tx - pos[i3]) * 0.1; pos[i3+1] += (ty - pos[i3+1]) * 0.1; pos[i3+2] += (tz - pos[i3+2]) * 0.1;
@@ -264,7 +268,7 @@ function animate() {
     petalGeometry.attributes.position.needsUpdate = true;
     
     particles.rotation.y = rotY + autoRot; particles.rotation.x = rotX;
-    
+    if (currentTarget === "lotus") particles.scale.set(currentScale, currentScale, currentScale); else particles.scale.set(1, 1, 1);
     particles.position.x += (targetX - particles.position.x) * 0.1; particles.position.y += (targetY - particles.position.y) * 0.1;
     renderer.render(scene, camera);
 }
